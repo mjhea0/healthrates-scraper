@@ -101,15 +101,27 @@ def add_link_to_database(single_link):
         )
 
 
-def grab_data():
+def grab_links_from_data_base():
     """
     Grab all data from the links table.
     """
     con = sqlite3.connect(URL_DATABASE)
     with con:
         cur = con.cursor()
-        all_links = cur.execute('SELECT * FROM links;')
-    return all_links
+        cur.execute('SELECT * FROM links WHERE id')
+        all_database_rows = len(cur.fetchall())
+        cur.execute('SELECT * FROM links WHERE id')
+        starting_row_id = int(cur.fetchone()[0])
+        for x in range(starting_row_id, all_database_rows+1):
+            cur.execute('SELECT * FROM links WHERE id=?', (x,))
+            link = cur.fetchone()
+            print link[1]
+            break
+
+    """
+    pass to get_relevant_data
+    add data to database
+    """
 
 
 def get_relevant_data(link):
@@ -147,7 +159,7 @@ def main():
     # get_all_data()
 
     # get links from database
-    # all_data = grab_data()
+    grab_links_from_data_base()
 
 
 if __name__ == '__main__':
