@@ -157,7 +157,7 @@ def get_relevant_data(link):
 
     # grab remaining data, add to dict
     plan_data = driver.find_elements_by_class_name('planData')
-    all_data[str(plan_data[0].text)] = str(plan_data[1].text.replace(':', ''))   # plan year
+    all_data[str(plan_data[0].text)] = str(plan_data[1].text)    # plan year
     all_data[str(plan_data[2].text)] = str(plan_data[3].text)    # market seg
     all_data[str(plan_data[5].text)] = str(plan_data[6].text)    # metal
     all_data[str(plan_data[7].text)] = str(plan_data[8].text)    # exchange
@@ -193,22 +193,21 @@ def add_relevant_data_to_database(all_data_object):
         cur.execute(
             """
             INSERT INTO data(
-                plan_name
-                carrier
-                metal
-                exchange
-                county
-                cost
-                status
-                plan_year
-                market_sement
-                january
-                april
-                july
-                october
-                url
+                plan_name,
+                carrier,
+                metal,
+                exchange,
+                county,
+                cost,
+                status,
+                plan_year,
+                market_sement,
+                january,
+                april,
+                july,
+                october,
+                url,
                 benefit_schedule
-                )
             )
             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -227,7 +226,7 @@ def add_relevant_data_to_database(all_data_object):
                 all_data_object['July:'],
                 all_data_object['October:'],
                 all_data_object['URL'],
-                all_data_object['Schedule of Benefits']
+                all_data_object['Schedule of Benefits'],
             )
         )
 
