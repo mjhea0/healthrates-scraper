@@ -2,8 +2,4 @@ env
 *.pyc
 .DS_Store
 ghostdriver.log
-links.py
-old.db
-old2.db
-data.db
-data.csv
+urls.sqlite
