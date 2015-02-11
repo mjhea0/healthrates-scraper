@@ -7,6 +7,7 @@ from selenium import webdriver
 ###############
 
 URL_DATABASE = 'urls.sqlite'
+DATA_DATABASE = 'data.sqlite'
 STARTING_URL = 'http://healthrates.doi.nv.gov/Wizard.aspx?type=Small%20Group'
 
 
@@ -23,6 +24,37 @@ def create_url_database():
                 """
                 CREATE TABLE links(
                     id INTEGER PRIMARY KEY, url TEXT)
+                """
+            )
+        except sqlite3.OperationalError:
+            pass  # silenced
+
+
+def create_data_database():
+    con = sqlite3.connect(DATA_DATABASE)
+    with con:
+        cur = con.cursor()
+        try:
+            cur.execute(
+                """
+                CREATE TABLE data(
+                    id INTEGER PRIMARY KEY,
+                    plan_name TEXT,
+                    carrier TEXT,
+                    metal TEXT,
+                    exchange TEXT,
+                    county TEXT,
+                    cost TEXT,
+                    status TEXT,
+                    plan_year TEXT,
+                    market_sement TEXT,
+                    january TEXT,
+                    april TEXT,
+                    july TEXT,
+                    october TEXT,
+                    url TEXT,
+                    benefist_schedule TEXT
+                )
                 """
             )
         except sqlite3.OperationalError:
@@ -102,15 +134,17 @@ def get_relevant_data(link):
 
     - returning a list of dicts
     """
+    pass
 
 
 def main():
 
-    # create database
+    # create databases
     create_url_database()
+    create_data_database()
 
     # grab links, add to database
-    get_all_data()
+    # get_all_data()
 
     # get links from database
     # all_data = grab_data()

@@ -3,3 +3,4 @@ env
 .DS_Store
 ghostdriver.log
 urls.sqlite
+data.sqlite
