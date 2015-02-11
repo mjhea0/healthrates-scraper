@@ -53,7 +53,7 @@ def create_data_database():
                     july TEXT,
                     october TEXT,
                     url TEXT,
-                    benefist_schedule TEXT
+                    benefit_schedule TEXT
                 )
                 """
             )
@@ -115,7 +115,8 @@ def grab_links_from_data_base():
         for x in range(starting_row_id, all_database_rows+1):
             cur.execute('SELECT * FROM links WHERE id=?', (x,))
             link = cur.fetchone()
-            get_relevant_data(link[1])
+            data_object = get_relevant_data(link[1])
+            add_relevant_data_to_database(data_object)
             break
 
 
@@ -156,7 +157,7 @@ def get_relevant_data(link):
 
     # grab remaining data, add to dict
     plan_data = driver.find_elements_by_class_name('planData')
-    all_data[str(plan_data[0].text)] = str(plan_data[1].text)    # plan year
+    all_data[str(plan_data[0].text)] = str(plan_data[1].text.replace(':', ''))   # plan year
     all_data[str(plan_data[2].text)] = str(plan_data[3].text)    # market seg
     all_data[str(plan_data[5].text)] = str(plan_data[6].text)    # metal
     all_data[str(plan_data[7].text)] = str(plan_data[8].text)    # exchange
@@ -177,11 +178,58 @@ def get_relevant_data(link):
     # add url to dict
     all_data["URL"] = str(link)
 
-    print all_data
-
     driver.quit()
+    return all_data
 
-    # add data to database!
+
+def add_relevant_data_to_database(all_data_object):
+    """
+    Given the 'all_data' object, this function adds the data to the database.
+    """
+    print all_data_object
+    con = sqlite3.connect(DATA_DATABASE)
+    with con:
+        cur = con.cursor()
+        cur.execute(
+            """
+            INSERT INTO data(
+                plan_name
+                carrier
+                metal
+                exchange
+                county
+                cost
+                status
+                plan_year
+                market_sement
+                january
+                april
+                july
+                october
+                url
+                benefit_schedule
+                )
+            )
+            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                all_data_object['Plan Name'],
+                all_data_object['Carrier'],
+                all_data_object['Metal Tier:'],
+                all_data_object['Exchange:'],
+                all_data_object['County:'],
+                all_data_object['Proposed:'],
+                all_data_object['Rate Status:'],
+                all_data_object['Plan Year:'],
+                all_data_object['Market Segment:'],
+                all_data_object['January:'],
+                all_data_object['April:'],
+                all_data_object['July:'],
+                all_data_object['October:'],
+                all_data_object['URL'],
+                all_data_object['Schedule of Benefits']
+            )
+        )
 
 
 def main():
@@ -193,9 +241,8 @@ def main():
     # grab links, add to database
     # get_all_data()
 
-    # get links from database, grab relevant data, add to database
+    # get links from database, grab relevant data, and then add to database
     grab_links_from_data_base()
-
 
 if __name__ == '__main__':
     main()
