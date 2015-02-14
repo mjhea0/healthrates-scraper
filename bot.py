@@ -2,21 +2,22 @@ import sqlite3
 from selenium import webdriver
 
 
-###############
-### Globals ###
-###############
+###########
+# Globals #
+###########
 
-URL_DATABASE = 'urls.sqlite'
-DATA_DATABASE = 'data.sqlite'
+YEAR = '2014'
+TYPE = 'Individual HSA'
+DATABASE = 'data.sqlite'
 STARTING_URL = 'http://healthrates.doi.nv.gov/Wizard.aspx?type=Small%20Group'
 
 
-############
-### Code ###
-############
+########
+# Code #
+########
 
-def create_url_database():
-    con = sqlite3.connect(URL_DATABASE)
+def create_database_and_tables():
+    con = sqlite3.connect(DATABASE)
     with con:
         cur = con.cursor()
         try:
@@ -26,15 +27,6 @@ def create_url_database():
                     id INTEGER PRIMARY KEY, url TEXT)
                 """
             )
-        except sqlite3.OperationalError:
-            pass  # silenced
-
-
-def create_data_database():
-    con = sqlite3.connect(DATA_DATABASE)
-    with con:
-        cur = con.cursor()
-        try:
             cur.execute(
                 """
                 CREATE TABLE data(
@@ -62,10 +54,12 @@ def create_data_database():
 
 
 def get_all_data():
+
     """
     This function navigates to the results page, from the starting URL, and
     grabs all the URLs.
     """
+
     counter = 1
 
     # navigate to results page
@@ -74,8 +68,16 @@ def get_all_data():
     driver.find_element_by_class_name('rates_review_button_submit').click()
     driver.find_element_by_tag_name('form').submit()
 
+    # perform search
+    driver.find_element_by_xpath(
+        "//select[@name='type']/option[text()='"+TYPE+"']").click()
+    driver.find_element_by_xpath(
+        "//select[@name='planyear']/option[text()='"+YEAR+"']").click()
+    driver.find_element_by_tag_name('form').submit()
+
     # find all links and add each to the DB
-    first_element = driver.find_element_by_xpath('//*[@id="resultsBox"]/div[5]')
+    first_element = driver.find_element_by_xpath(
+        '//*[@id="resultsBox"]/div[5]')
     all_links = first_element.find_elements_by_xpath('.//*[@href]')
     all_links_length = len(all_links)
     for link in all_links:
@@ -91,7 +93,7 @@ def add_link_to_database(single_link):
     """
     Given a url, update the database.
     """
-    con = sqlite3.connect(URL_DATABASE)
+    con = sqlite3.connect(DATABASE)
     with con:
         cur = con.cursor()
         cur.execute(
@@ -101,11 +103,11 @@ def add_link_to_database(single_link):
         )
 
 
-def grab_links_from_data_base():
+def grab_links_from_database():
     """
     Grab all data from the links table.
     """
-    con = sqlite3.connect(URL_DATABASE)
+    con = sqlite3.connect(DATABASE)
     with con:
         cur = con.cursor()
         cur.execute('SELECT * FROM links WHERE id')
@@ -163,7 +165,7 @@ def get_relevant_data(link):
     all_data[str(plan_data[7].text)] = str(plan_data[8].text)    # exchange
     all_data[str(plan_data[10].text)] = str(plan_data[11].text)  # status
     all_data[str(plan_data[12].text)] = str(plan_data[13].text)  # county
-    all_data[str(plan_data[14].text)] = str(plan_data[15].text)  # proposed cost
+    all_data[str(plan_data[14].text)] = str(plan_data[15].text)  # cost
     all_data[str(plan_data[16].text)] = str(plan_data[17].text)  # average age
     all_data[str(plan_data[20].text)] = str(plan_data[21].text)  # january
     all_data[str(plan_data[22].text)] = str(plan_data[23].text)  # july
@@ -187,7 +189,7 @@ def add_relevant_data_to_database(all_data_object):
     Given the 'all_data' object, this function adds the data to the database.
     """
     print all_data_object
-    con = sqlite3.connect(DATA_DATABASE)
+    con = sqlite3.connect(DATABASE)
     with con:
         cur = con.cursor()
         cur.execute(
@@ -234,14 +236,13 @@ def add_relevant_data_to_database(all_data_object):
 def main():
 
     # create databases
-    create_url_database()
-    create_data_database()
+    create_database_and_tables()
 
     # grab links, add to database
-    # get_all_data()
+    get_all_data()
 
     # get links from database, grab relevant data, and then add to database
-    grab_links_from_data_base()
+    # grab_links_from_database()
 
 if __name__ == '__main__':
     main()
