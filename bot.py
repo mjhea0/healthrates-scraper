@@ -118,8 +118,8 @@ def grab_links_from_database():
             cur.execute('SELECT * FROM links WHERE id=?', (x,))
             link = cur.fetchone()
             data_object = get_relevant_data(link[1])
-            add_relevant_data_to_database(data_object)
-            break
+            if data_object:
+                add_relevant_data_to_database(data_object)
 
 
 def get_relevant_data(link):
@@ -151,37 +151,41 @@ def get_relevant_data(link):
     driver.get(link)
 
     # grab plan name and carrier, add to dict
-    plan_name = driver.find_element_by_tag_name('h2').text
-    carrier = driver.find_element_by_xpath(
-        '//*[@id="secondary-wrapper"]/section/div/h3[1]').text
-    all_data['Plan Name'] = str(plan_name)
-    all_data['Carrier'] = str(carrier)
+    try:
+        plan_name = driver.find_element_by_tag_name('h2').text
+        carrier = driver.find_element_by_xpath(
+            '//*[@id="secondary-wrapper"]/section/div/h3[1]').text
+        all_data['Plan Name'] = str(plan_name)
+        all_data['Carrier'] = str(carrier)
 
-    # grab remaining data, add to dict
-    plan_data = driver.find_elements_by_class_name('planData')
-    all_data[str(plan_data[0].text)] = str(plan_data[1].text)    # plan year
-    all_data[str(plan_data[2].text)] = str(plan_data[3].text)    # market seg
-    all_data[str(plan_data[5].text)] = str(plan_data[6].text)    # metal
-    all_data[str(plan_data[7].text)] = str(plan_data[8].text)    # exchange
-    all_data[str(plan_data[10].text)] = str(plan_data[11].text)  # status
-    all_data[str(plan_data[12].text)] = str(plan_data[13].text)  # county
-    all_data[str(plan_data[14].text)] = str(plan_data[15].text)  # cost
-    all_data[str(plan_data[16].text)] = str(plan_data[17].text)  # average age
-    all_data[str(plan_data[20].text)] = str(plan_data[21].text)  # january
-    all_data[str(plan_data[22].text)] = str(plan_data[23].text)  # july
-    all_data[str(plan_data[24].text)] = str(plan_data[25].text)  # april
-    all_data[str(plan_data[26].text)] = str(plan_data[27].text)  # october
+        # grab remaining data, add to dict
+        plan_data = driver.find_elements_by_class_name('planData')
+        all_data[str(plan_data[0].text)] = str(plan_data[1].text)    # plan year
+        all_data[str(plan_data[2].text)] = str(plan_data[3].text)    # market seg
+        all_data[str(plan_data[5].text)] = str(plan_data[6].text)    # metal
+        all_data[str(plan_data[7].text)] = str(plan_data[8].text)    # exchange
+        all_data[str(plan_data[10].text)] = str(plan_data[11].text)  # status
+        all_data[str(plan_data[12].text)] = str(plan_data[13].text)  # county
+        all_data[str(plan_data[14].text)] = str(plan_data[15].text)  # cost
+        all_data[str(plan_data[16].text)] = str(plan_data[17].text)  # avg age
+        all_data[str(plan_data[20].text)] = str(plan_data[21].text)  # january
+        all_data[str(plan_data[22].text)] = str(plan_data[23].text)  # july
+        all_data[str(plan_data[24].text)] = str(plan_data[25].text)  # april
+        all_data[str(plan_data[26].text)] = str(plan_data[27].text)  # october
 
-    # add pdf link to dict
-    pdf_link = driver.find_element_by_xpath(
-        '//*[@id="secondary-wrapper"]/section/div/a[1]')
-    all_data["Schedule of Benefits"] = str(pdf_link.get_attribute('href'))
+        # add pdf link to dict
+        pdf_link = driver.find_element_by_xpath(
+            '//*[@id="secondary-wrapper"]/section/div/a[1]')
+        all_data["Schedule of Benefits"] = str(pdf_link.get_attribute('href'))
 
-    # add url to dict
-    all_data["URL"] = str(link)
+        # add url to dict
+        all_data["URL"] = str(link)
 
-    driver.quit()
-    return all_data
+        driver.quit()
+        return all_data
+    except:
+        driver.quit()
+        pass
 
 
 def add_relevant_data_to_database(all_data_object):
@@ -242,7 +246,7 @@ def main():
     get_all_data()
 
     # get links from database, grab relevant data, and then add to database
-    # grab_links_from_database()
+    grab_links_from_database()
 
 if __name__ == '__main__':
     main()
