@@ -6,9 +6,10 @@ from selenium import webdriver
 # Globals #
 ###########
 
-YEAR = '2014'  # update me
-TYPE = 'Individual HSA'  # update me
-DATABASE = 'data.sqlite'
+YEAR = '2014'             # update me
+TYPE = 'Individual HSA'   # update me
+DATABASE = 'data.sqlite'  # update me
+
 STARTING_URL = 'http://healthrates.doi.nv.gov/Wizard.aspx?type=Small%20Group'
 
 
