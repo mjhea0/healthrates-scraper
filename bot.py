@@ -143,7 +143,7 @@ def get_relevant_data(link):
         URL
         Schedule of Benefits
 
-    - returning a list of dicts
+    - returning a dict
     """
 
     all_data = {}
@@ -240,7 +240,7 @@ def add_relevant_data_to_database(all_data_object):
 
 def main():
 
-    # create databases
+    # create database
     create_database_and_tables()
 
     # grab links, add to database
