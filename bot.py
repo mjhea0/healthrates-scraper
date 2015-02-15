@@ -1,4 +1,5 @@
 import sqlite3
+import datetime
 from selenium import webdriver
 
 
@@ -8,8 +9,9 @@ from selenium import webdriver
 
 YEAR = '2014'             # update me
 TYPE = 'Individual HSA'   # update me
-DATABASE = 'data.sqlite'  # update me
 
+now = datetime.datetime.now()
+DATABASE = 'data_{0}.sqlite'.format(now.strftime("%Y-%m-%d_%H:%M"))
 STARTING_URL = 'http://healthrates.doi.nv.gov/Wizard.aspx?type=Small%20Group'
 
 
