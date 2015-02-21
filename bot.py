@@ -66,7 +66,8 @@ def get_all_data():
     counter = 1
 
     # navigate to results page
-    driver = webdriver.Firefox()
+    # driver = webdriver.Firefox()
+    driver = webdriver.PhantomJS()
     driver.get(STARTING_URL)
     driver.find_element_by_class_name('rates_review_button_submit').click()
     driver.find_element_by_tag_name('form').submit()
@@ -110,6 +111,9 @@ def grab_links_from_database():
     """
     Grab all data from the links table.
     """
+
+    counter = 1
+
     con = sqlite3.connect(DATABASE)
     with con:
         cur = con.cursor()
@@ -123,6 +127,9 @@ def grab_links_from_database():
             data_object = get_relevant_data(link[1])
             if data_object:
                 add_relevant_data_to_database(data_object)
+                print 'Scraped link number {0} of {1}'.format(
+                    counter, all_database_rows)
+                counter += 1
 
 
 def get_relevant_data(link):
@@ -150,7 +157,8 @@ def get_relevant_data(link):
 
     all_data = {}
 
-    driver = webdriver.Firefox()
+    # driver = webdriver.Firefox()
+    driver = webdriver.PhantomJS()
     driver.get(link)
 
     # grab plan name and carrier, add to dict
@@ -163,8 +171,8 @@ def get_relevant_data(link):
 
         # grab remaining data, add to dict
         plan_data = driver.find_elements_by_class_name('planData')
-        all_data[str(plan_data[0].text)] = str(plan_data[1].text)    # plan year
-        all_data[str(plan_data[2].text)] = str(plan_data[3].text)    # market seg
+        all_data[str(plan_data[0].text)] = str(plan_data[1].text)    # year
+        all_data[str(plan_data[2].text)] = str(plan_data[3].text)    # market
         all_data[str(plan_data[5].text)] = str(plan_data[6].text)    # metal
         all_data[str(plan_data[7].text)] = str(plan_data[8].text)    # exchange
         all_data[str(plan_data[10].text)] = str(plan_data[11].text)  # status
@@ -195,7 +203,7 @@ def add_relevant_data_to_database(all_data_object):
     """
     Given the 'all_data' object, this function adds the data to the database.
     """
-    print all_data_object
+
     con = sqlite3.connect(DATABASE)
     with con:
         cur = con.cursor()
