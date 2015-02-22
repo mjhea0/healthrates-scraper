@@ -33,7 +33,7 @@ log = logging.getLogger("ex")
 
 def create_database_and_tables():
 
-    print "Creating database..."
+    print("Creating database...")
 
     con = sqlite3.connect(DATABASE)
     with con:
@@ -81,7 +81,7 @@ def get_all_data():
     grabs all the URLs.
     """
 
-    print "Grabbing links..."
+    print("Grabbing links...")
 
     # driver = webdriver.Firefox()
     driver = webdriver.PhantomJS()
@@ -112,8 +112,8 @@ def get_all_data():
         all_links_length = len(all_links)
         for link in all_links:
             add_link_to_database(link.get_attribute('href'), county)
-            print 'Added link # {0} of {1} in {2} county to DB'.format(
-                counter, all_links_length, county)
+            print('Added link # {0} of {1} in {2} county to DB'.format(
+                counter, all_links_length, county))
             counter += 1
 
     driver.quit()
@@ -135,7 +135,7 @@ def add_link_to_database(single_link, county):
 
 
 def cleanup_database():
-    print "Removing bad links..."
+    print("Removing bad links...")
     con = sqlite3.connect(DATABASE)
     with con:
         cur = con.cursor()
@@ -149,7 +149,7 @@ def grab_links_from_database():
     Grab all data from the links table.
     """
 
-    print "Scraping data..."
+    print("Scraping data...")
 
     counter = 1
 
@@ -164,8 +164,8 @@ def grab_links_from_database():
             if link:
                 data_object = get_relevant_data(link[1])
                 if data_object:
-                    print 'Added scraped link # {0} of {1} to the DB.'.format(
-                        counter, all_database_rows)
+                    print('Added scraped link # {0} of {1} to the DB.'.format(
+                        counter, all_database_rows))
                     add_relevant_data_to_database(data_object)
                 counter += 1
 
@@ -233,7 +233,7 @@ def get_relevant_data(link):
         driver.quit()
         return all_data
     except Exception as e:
-        print e
+        print(e)
         log.exception("Error!")
         driver.quit()
 
@@ -295,7 +295,7 @@ def timestamp_database():
     new_database_name = database_without_extension + '{0}.sqlite'.format(
         now.strftime("%Y-%m-%d_%H:%M"))
     os.rename(DATABASE, new_database_name)
-    print "Done!"
+    print("Done!")
 
 
 def main():
