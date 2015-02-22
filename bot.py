@@ -124,12 +124,14 @@ def grab_links_from_database():
         for x in range(starting_row_id, all_database_rows+1):
             cur.execute('SELECT * FROM links WHERE id=?', (x,))
             link = cur.fetchone()
+            print 'Scraped link number {0} of {1}'.format(
+                counter, all_database_rows)
+            counter += 1
             data_object = get_relevant_data(link[1])
             if data_object:
                 add_relevant_data_to_database(data_object)
-                print 'Scraped link number {0} of {1}'.format(
-                    counter, all_database_rows)
-                counter += 1
+            else:
+                pass
 
 
 def get_relevant_data(link):
@@ -194,9 +196,11 @@ def get_relevant_data(link):
 
         driver.quit()
         return all_data
-    except:
+    except Exception as e:
+        print str(link)
+        print e
         driver.quit()
-        pass
+        return False
 
 
 def add_relevant_data_to_database(all_data_object):
