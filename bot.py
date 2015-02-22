@@ -1,18 +1,20 @@
+import os
 import sqlite3
 import datetime
 import logging
+
 from selenium import webdriver
+
 
 ###########
 # Globals #
 ###########
 
-YEAR = '2014'             # update me
-TYPE = 'Individual HSA'   # update me
-CREATE_DATABASE = False    # update me
+YEAR = '2014'
+TYPE = 'Individual HSA'
+CREATE_DATABASE = True
 
 COUNTIES = ['Carson City', 'Elko', 'Nye', 'Washoe']
-NOW = datetime.datetime.now()
 DATABASE = 'data_{0}_{1}.sqlite'.format(YEAR, TYPE.replace(' ', ''))
 STARTING_URL = 'http://healthrates.doi.nv.gov/Wizard.aspx?type=Small%20Group'
 BAD_LINKS = [
@@ -156,17 +158,16 @@ def grab_links_from_database():
         cur = con.cursor()
         cur.execute('SELECT * FROM links')
         all_database_rows = len(cur.fetchall())
-        cur.execute('SELECT * FROM links')
-        starting_row_id = int(cur.fetchone()[0])
-        for row_id in range(starting_row_id, all_database_rows):
+        for row_id in range(52, all_database_rows):
             cur.execute('SELECT * FROM links WHERE id=?', (row_id,))
             link = cur.fetchone()
-            data_object = get_relevant_data(link[1])
-            if data_object:
-                print 'Added scraped link # {0} of {1} to the DB.'.format(
-                    counter, all_database_rows)
-                add_relevant_data_to_database(data_object)
-            counter += 1
+            if link:
+                data_object = get_relevant_data(link[1])
+                if data_object:
+                    print 'Added scraped link # {0} of {1} to the DB.'.format(
+                        counter, all_database_rows)
+                    add_relevant_data_to_database(data_object)
+                counter += 1
 
 
 def get_relevant_data(link):
@@ -201,10 +202,10 @@ def get_relevant_data(link):
     # grab plan name and carrier, add to dict
     try:
         plan_name = driver.find_element_by_tag_name('h2').text
-        carrier = driver.find_element_by_xpath(
-            '//*[@id="secondary-wrapper"]/section/div/h3[1]').text
+        carrier = (driver.find_element_by_xpath(
+            '//*[@id="secondary-wrapper"]/section/div/h3[1]').text)
         all_data['Plan Name'] = str(plan_name)
-        all_data['Carrier'] = str(carrier)
+        all_data['Carrier'] = str(carrier.encode('utf-8'))
 
         # grab remaining data, add to dict
         plan_data = driver.find_elements_by_class_name('planData')
@@ -244,6 +245,7 @@ def add_relevant_data_to_database(all_data_object):
     """
 
     con = sqlite3.connect(DATABASE)
+    con.text_factory = str
     with con:
         cur = con.cursor()
         cur.execute(
@@ -287,6 +289,15 @@ def add_relevant_data_to_database(all_data_object):
         )
 
 
+def timestamp_database():
+    database_without_extension = os.path.splitext(DATABASE)[0]
+    now = datetime.datetime.now()
+    new_database_name = database_without_extension + '{0}.sqlite'.format(
+        now.strftime("%Y-%m-%d_%H:%M"))
+    os.rename(DATABASE, new_database_name)
+    print "Done!"
+
+
 def main():
 
     if CREATE_DATABASE:
@@ -301,6 +312,9 @@ def main():
 
     # get links from database, grab relevant data, and then add to database
     grab_links_from_database()
+
+    # add timestamp once complete
+    timestamp_database()
 
 if __name__ == '__main__':
     main()
