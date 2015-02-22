@@ -167,7 +167,6 @@ def grab_links_from_database():
                     counter, all_database_rows)
                 add_relevant_data_to_database(data_object)
             counter += 1
-            break
 
 
 def get_relevant_data(link):
