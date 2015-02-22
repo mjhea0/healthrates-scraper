@@ -1,7 +1,7 @@
 import sqlite3
 import datetime
+import logging
 from selenium import webdriver
-
 
 ###########
 # Globals #
@@ -9,13 +9,20 @@ from selenium import webdriver
 
 YEAR = '2014'             # update me
 TYPE = 'Individual HSA'   # update me
-CREATE_DATABASE = True    # update me
+CREATE_DATABASE = False    # update me
 
 COUNTIES = ['Carson City', 'Elko', 'Nye', 'Washoe']
-now = datetime.datetime.now()
-DATABASE = 'data_{0}_{1}_{2}.sqlite'.format(
-    YEAR, TYPE.replace(' ', ''), now.strftime("%Y-%m-%d_%H:%M"))
+NOW = datetime.datetime.now()
+DATABASE = 'data_{0}_{1}.sqlite'.format(YEAR, TYPE.replace(' ', ''))
 STARTING_URL = 'http://healthrates.doi.nv.gov/Wizard.aspx?type=Small%20Group'
+BAD_LINKS = [
+    'http://exchange.nv.gov/',
+    'http://healthrates.doi.nv.gov/Default.aspx#',
+    'http://www.nevadahealthlink.com/'
+]
+
+logging.basicConfig(filename="error.log", level=logging.INFO)
+log = logging.getLogger("ex")
 
 
 ########
@@ -36,6 +43,9 @@ def create_database_and_tables():
                     id INTEGER PRIMARY KEY, url TEXT, county_name TEXT)
                 """
             )
+        except sqlite3.OperationalError:
+            log.exception("Error!")
+        try:
             cur.execute(
                 """
                 CREATE TABLE data(
@@ -59,7 +69,7 @@ def create_database_and_tables():
                 """
             )
         except sqlite3.OperationalError:
-            pass  # silenced
+            log.exception("Error!")
 
 
 def get_all_data():
@@ -100,7 +110,7 @@ def get_all_data():
         all_links_length = len(all_links)
         for link in all_links:
             add_link_to_database(link.get_attribute('href'), county)
-            print 'Added link number {0} of {1} in {2} county to DB'.format(
+            print 'Added link # {0} of {1} in {2} county to DB'.format(
                 counter, all_links_length, county)
             counter += 1
 
@@ -122,32 +132,42 @@ def add_link_to_database(single_link, county):
         )
 
 
+def cleanup_database():
+    print "Removing bad links..."
+    con = sqlite3.connect(DATABASE)
+    with con:
+        cur = con.cursor()
+        for link in BAD_LINKS:
+            cur.execute('DELETE FROM links WHERE url=?', (link,))
+
+
 def grab_links_from_database():
 
     """
     Grab all data from the links table.
     """
 
+    print "Scraping data..."
+
     counter = 1
 
     con = sqlite3.connect(DATABASE)
     with con:
         cur = con.cursor()
-        cur.execute('SELECT * FROM links WHERE id')
+        cur.execute('SELECT * FROM links')
         all_database_rows = len(cur.fetchall())
-        cur.execute('SELECT * FROM links WHERE id')
+        cur.execute('SELECT * FROM links')
         starting_row_id = int(cur.fetchone()[0])
-        for x in range(starting_row_id, all_database_rows+1):
-            cur.execute('SELECT * FROM links WHERE id=?', (x,))
+        for row_id in range(starting_row_id, all_database_rows):
+            cur.execute('SELECT * FROM links WHERE id=?', (row_id,))
             link = cur.fetchone()
-            print 'Scraped link number {0} of {1}'.format(
-                counter, all_database_rows)
-            counter += 1
             data_object = get_relevant_data(link[1])
             if data_object:
+                print 'Added scraped link # {0} of {1} to the DB.'.format(
+                    counter, all_database_rows)
                 add_relevant_data_to_database(data_object)
-            else:
-                pass
+            counter += 1
+            break
 
 
 def get_relevant_data(link):
@@ -213,10 +233,9 @@ def get_relevant_data(link):
         driver.quit()
         return all_data
     except Exception as e:
-        print str(link)
         print e
+        log.exception("Error!")
         driver.quit()
-        return False
 
 
 def add_relevant_data_to_database(all_data_object):
@@ -278,8 +297,11 @@ def main():
         # grab links, add to database
         get_all_data()
 
+        # remove bad links
+        cleanup_database()
+
     # get links from database, grab relevant data, and then add to database
-    # grab_links_from_database()
+    grab_links_from_database()
 
 if __name__ == '__main__':
     main()
