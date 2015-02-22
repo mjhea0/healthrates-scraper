@@ -9,9 +9,12 @@ from selenium import webdriver
 
 YEAR = '2014'             # update me
 TYPE = 'Individual HSA'   # update me
+CREATE_DATABASE = True    # update me
 
+COUNTIES = ['Carson City', 'Elko', 'Nye', 'Washoe']
 now = datetime.datetime.now()
-DATABASE = 'data_{0}.sqlite'.format(now.strftime("%Y-%m-%d_%H:%M"))
+DATABASE = 'data_{0}_{1}_{2}.sqlite'.format(
+    YEAR, TYPE.replace(' ', ''), now.strftime("%Y-%m-%d_%H:%M"))
 STARTING_URL = 'http://healthrates.doi.nv.gov/Wizard.aspx?type=Small%20Group'
 
 
@@ -20,6 +23,9 @@ STARTING_URL = 'http://healthrates.doi.nv.gov/Wizard.aspx?type=Small%20Group'
 ########
 
 def create_database_and_tables():
+
+    print "Creating database..."
+
     con = sqlite3.connect(DATABASE)
     with con:
         cur = con.cursor()
@@ -27,7 +33,7 @@ def create_database_and_tables():
             cur.execute(
                 """
                 CREATE TABLE links(
-                    id INTEGER PRIMARY KEY, url TEXT)
+                    id INTEGER PRIMARY KEY, url TEXT, county_name TEXT)
                 """
             )
             cur.execute(
@@ -63,37 +69,46 @@ def get_all_data():
     grabs all the URLs.
     """
 
-    counter = 1
+    print "Grabbing links..."
 
-    # navigate to results page
     # driver = webdriver.Firefox()
     driver = webdriver.PhantomJS()
-    driver.get(STARTING_URL)
-    driver.find_element_by_class_name('rates_review_button_submit').click()
-    driver.find_element_by_tag_name('form').submit()
 
-    # perform search
-    driver.find_element_by_xpath(
-        "//select[@name='type']/option[text()='"+TYPE+"']").click()
-    driver.find_element_by_xpath(
-        "//select[@name='planyear']/option[text()='"+YEAR+"']").click()
-    driver.find_element_by_tag_name('form').submit()
+    for county in COUNTIES:
 
-    # find all links and add each to the DB
-    first_element = driver.find_element_by_xpath(
-        '//*[@id="resultsBox"]/div[5]')
-    all_links = first_element.find_elements_by_xpath('.//*[@href]')
-    all_links_length = len(all_links)
-    for link in all_links:
-        add_link_to_database(link.get_attribute('href'))
-        print 'Added link number {0} of {1} to DB'.format(
-            counter, all_links_length)
-        counter += 1
+        counter = 1
+
+        # navigate to results page
+        driver.get(STARTING_URL)
+        driver.find_element_by_class_name('rates_review_button_submit').click()
+        driver.find_element_by_tag_name('form').submit()
+
+        # perform search
+        driver.find_element_by_xpath(
+            "//select[@name='type']/option[text()='"+TYPE+"']").click()
+        driver.find_element_by_xpath(
+            "//select[@name='planyear']/option[text()='"+YEAR+"']").click()
+        driver.find_element_by_xpath(
+            "//select[@name='county']/option[text()='"+county+"']").click()
+
+        driver.find_element_by_tag_name('form').submit()
+
+        # find all links and add each to the DB
+        first_element = driver.find_element_by_xpath(
+            '//*[@id="resultsBox"]/div[5]')
+        all_links = first_element.find_elements_by_xpath('.//*[@href]')
+        all_links_length = len(all_links)
+        for link in all_links:
+            add_link_to_database(link.get_attribute('href'), county)
+            print 'Added link number {0} of {1} in {2} county to DB'.format(
+                counter, all_links_length, county)
+            counter += 1
 
     driver.quit()
 
 
-def add_link_to_database(single_link):
+def add_link_to_database(single_link, county):
+
     """
     Given a url, update the database.
     """
@@ -102,12 +117,13 @@ def add_link_to_database(single_link):
         cur = con.cursor()
         cur.execute(
             """
-            INSERT INTO links(url) VALUES(?)
-            """, (single_link,)
+            INSERT INTO links(url, county_name) VALUES(?, ?)
+            """, (single_link, county)
         )
 
 
 def grab_links_from_database():
+
     """
     Grab all data from the links table.
     """
@@ -204,6 +220,7 @@ def get_relevant_data(link):
 
 
 def add_relevant_data_to_database(all_data_object):
+
     """
     Given the 'all_data' object, this function adds the data to the database.
     """
@@ -254,14 +271,15 @@ def add_relevant_data_to_database(all_data_object):
 
 def main():
 
-    # create database
-    create_database_and_tables()
+    if CREATE_DATABASE:
+        # create database
+        create_database_and_tables()
 
-    # grab links, add to database
-    get_all_data()
+        # grab links, add to database
+        get_all_data()
 
     # get links from database, grab relevant data, and then add to database
-    grab_links_from_database()
+    # grab_links_from_database()
 
 if __name__ == '__main__':
     main()
