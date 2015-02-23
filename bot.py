@@ -109,14 +109,25 @@ def get_all_data():
         first_element = driver.find_element_by_xpath(
             '//*[@id="resultsBox"]/div[5]')
         all_links = first_element.find_elements_by_xpath('.//*[@href]')
+        cleaned_links = cleanup_links(all_links)
         all_links_length = len(all_links)
-        for link in all_links:
-            add_link_to_database(link.get_attribute('href'), county)
+        for link in cleaned_links:
+            add_link_to_database(link, county)
             print('Added link # {0} of {1} in {2} county to DB'.format(
                 counter, all_links_length, county))
             counter += 1
 
     driver.quit()
+
+
+def cleanup_links(all_links_list_of_objects):
+    clean_links = []
+    for link in all_links_list_of_objects:
+        if str(link.get_attribute('href')) != BAD_LINKS[0] and \
+           str(link.get_attribute('href')) != BAD_LINKS[1] and \
+           str(link.get_attribute('href')) != BAD_LINKS[2]:
+            clean_links.append(link.get_attribute('href'))
+    return clean_links
 
 
 def add_link_to_database(single_link, county):
@@ -158,7 +169,7 @@ def grab_links_from_database():
         cur = con.cursor()
         cur.execute('SELECT * FROM links')
         all_database_rows = len(cur.fetchall())
-        for row_id in range(52, all_database_rows):
+        for row_id in range(1, all_database_rows+1):
             cur.execute('SELECT * FROM links WHERE id=?', (row_id,))
             link = cur.fetchone()
             if link:
@@ -306,9 +317,6 @@ def main():
 
         # grab links, add to database
         get_all_data()
-
-        # remove bad links
-        cleanup_database()
 
     # get links from database, grab relevant data, and then add to database
     grab_links_from_database()
